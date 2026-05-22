@@ -1,0 +1,91 @@
+# ⚡ EVEZ Homer Dashboard Configuration
+title: "⚡ EVEZ Mesh Network"
+subtitle: "Self-Building Autonomous AI Network — Desert-Hardened"
+logo: "https://evez.ai/logo.png"
+icon: "fas fa-network-wired"
+header: true
+footer: '<p>EVEZ-OS • Bullhead City, AZ • <a href="https://github.com/EvezArt">GitHub</a></p>'
+
+colors:
+  light:
+    highlight-primary: "#0a0c14"
+    highlight-secondary: "#00ffc8"
+    highlight-hover: "#ff0066"
+  dark:
+    highlight-primary: "#0a0c14"
+    highlight-secondary: "#00ffc8"
+    highlight-hover: "#ff0066"
+
+message:
+  style: "is-dark"
+  title: "⚡ EVEZ Mesh Status"
+  content: "Self-healing mesh network — MeshMind AI active — Desert-hardened"
+
+links:
+  - name: "GitHub"
+    icon: "fab fa-github"
+    url: "https://github.com/EvezArt"
+  - name: "Docs"
+    icon: "fas fa-book"
+    url: "https://docs.evez.ai"
+
+services:
+  - name: "🧠 AI Layer"
+    icon: "fas fa-brain"
+    items:
+      - name: "MeshMind AI"
+        subtitle: "Network Healer"
+        url: "http://localhost:8899"
+        tag: "AI"
+      - name: "Ollama"
+        subtitle: "Local LLM"
+        url: "http://localhost:11434"
+        tag: "AI"
+
+  - name: "🕸️ Mesh Layer"
+    icon: "fas fa-network-wired"
+    items:
+      - name: "Reticulum"
+        subtitle: "Mesh Network"
+        url: "http://localhost:4242"
+        tag: "Mesh"
+      - name: "Meshtastic"
+        subtitle: "LoRa Bridge"
+        url: "http://localhost:8080"
+        tag: "LoRa"
+
+  - name: "🔄 Automation"
+    icon: "fas fa-cogs"
+    items:
+      - name: "n8n"
+        subtitle: "Workflow Engine"
+        url: "http://localhost:5678"
+        tag: "Automation"
+      - name: "Syncthing"
+        subtitle: "File Sync"
+        url: "http://localhost:8384"
+        tag: "Sync"
+
+  - name: "📊 Monitoring"
+    icon: "fas fa-chart-line"
+    items:
+      - name: "Prometheus"
+        subtitle: "Metrics"
+        url: "http://localhost:9090"
+        tag: "Monitor"
+      - name: "Grafana"
+        subtitle: "Dashboards"
+        url: "http://localhost:3000"
+        tag: "Monitor"
+      - name: "SearXNG"
+        subtitle: "Meta Search"
+        url: "http://localhost:8888"
+        tag: "Search"
+
+  - name: "💬 Comms"
+    icon: "fas fa-comments"
+    items:
+      - name: "Synapse"
+        subtitle: "Matrix Server"
+        url: "http://localhost:8008"
+        tag: "Matrix"

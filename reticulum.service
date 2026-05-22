@@ -1,0 +1,21 @@
+[Unit]
+Description=Reticulum Network Daemon
+After=network.target docker.service
+Wants=docker.service
+
+[Service]
+Type=simple
+User=evez
+Group=evez
+ExecStart=/usr/local/bin/rnsd
+Restart=always
+RestartSec=5
+Environment=RNS_LOGLEVEL=INFO
+WorkingDirectory=/opt/evez/data/reticulum
+
+# Desert thermal: reduce priority under load
+Nice=10
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=multi-user.target

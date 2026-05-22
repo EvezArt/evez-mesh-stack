@@ -1,0 +1,200 @@
+version: "3.8"
+
+services:
+  # ─── Reticulum Mesh Network ─────────────────────────
+  reticulum:
+    image: reserveinalization/reticulum:latest
+    container_name: evez-reticulum
+    restart: always
+    network_mode: host
+    volumes:
+      - ./data/reticulum:/root/.reticulum
+    environment:
+      - RNS_LOGLEVEL=INFO
+    ports:
+      - "4242:4242"
+
+  # ─── MeshMind — AI Network Healer ──────────────────
+  meshmind:
+    build:
+      context: .
+      dockerfile: Dockerfile.meshmind
+    container_name: evez-meshmind
+    restart: always
+    depends_on:
+      - reticulum
+      - ollama
+      - postgres
+    volumes:
+      - ./data/meshmind:/app/data
+    environment:
+      - RNS_HOST=reticulum
+      - OLLAMA_HOST=http://ollama:11434
+      - DATABASE_URL=postgresql://evez:evez@postgres:5432/meshmind
+      - EVZ_DATA=/app/data
+    ports:
+      - "8899:8899"
+
+  # ─── Health Watchdog ──────────────────────────────
+  health_watchdog:
+    image: alpine:3.19
+    container_name: evez-watchdog
+    restart: always
+    volumes:
+      - ./health_watch.sh:/watchdog.sh:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    entrypoint: ["/bin/sh", "-c", "apk add --no-cache docker-cli curl jq && chmod +x /watchdog.sh && while true; do /watchdog.sh; sleep 300; done"]
+
+  # ─── n8n Workflow Automation ──────────────────────
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: evez-n8n
+    restart: always
+    depends_on:
+      - postgres
+    volumes:
+      - ./data/n8n:/home/node/.n8n
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=evez
+      - DB_POSTGRESDB_PASSWORD=evez
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=evez
+      - N8N_BASIC_AUTH_PASSWORD=evez
+      - WEBHOOK_URL=http://localhost:5678/
+    ports:
+      - "5678:5678"
+
+  # ┌─── Ollama Local AI ────────────────────────────┐
+  ollama:
+    image: ollama/ollama:latest
+    container_name: evez-ollama
+    restart: always
+    volumes:
+      - ./data/ollama:/root/.ollama
+    ports:
+      - "11434:11434"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # ─── Prometheus Monitoring ──────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: evez-prometheus
+    restart: always
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./data/prometheus:/prometheus
+    ports:
+      - "9090:9090"
+
+  # ─── Grafana Dashboards ────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: evez-grafana
+    restart: always
+    depends_on:
+      - prometheus
+      - postgres
+    environment:
+      - GF_SECURITY_ADMIN_USER=evez
+      - GF_SECURITY_ADMIN_PASSWORD=evez
+      - GF_INSTALL_PLUGINS=grafana-clock-panel
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+    ports:
+      - "3000:3000"
+
+  # ─── Homer Service Dashboard ────────────────────
+  homer:
+    image: b4bz/homer:latest
+    container_name: evez-homer
+    restart: always
+    volumes:
+      - ./homer.yml:/www/assets/config.yml:ro
+    ports:
+      - "8180:8080"
+
+  # ─── PostgreSQL ──────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: evez-postgres
+    restart: always
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
+    environment:
+      - POSTGRES_USER=evez
+      - POSTGRES_PASSWORD=evez
+      - POSTGRES_MULTIPLE_DATABASES=meshmind,n8n,prometheus
+    ports:
+      - "5432:5432"
+
+  # ─── SearXNG Meta Search ─────────────────────────
+  searxng:
+    image: searxng/searxng:latest
+    container_name: evez-searxng
+    restart: always
+    volumes:
+      - ./data/searxng:/etc/searxng:rw
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8888/
+    ports:
+      - "8888:8080"
+
+  # ─── Syncthing File Sync ─────────────────────────
+  syncthing:
+    image: syncthing/syncthing:latest
+    container_name: evez-syncthing
+    restart: always
+    hostname: evez-node
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - ./data/syncthing:/var/syncthing
+    ports:
+      - "8384:8384"
+      - "22000:22000/tcp"
+      - "22000:22000/udp"
+      - "21027:21027/udp"
+
+  # ─── Matrix (Element) Communication ──────────────
+  synapse:
+    image: matrixorg/synapse:latest
+    container_name: evez-synapse
+    restart: always
+    volumes:
+      - ./data/synapse:/data
+    environment:
+      - SYNAPSE_SERVER_NAME=evez.local
+      - SYNAPSE_REPORT_STATS=no
+    ports:
+      - "8008:8008"
+
+  # ─── Meshtastic Bridge (LoRa → Reticulum) ───────
+  meshtastic-bridge:
+    build:
+      context: .
+      dockerfile: Dockerfile.meshtastic
+    container_name: evez-meshtastic-bridge
+    restart: always
+    depends_on:
+      - reticulum
+    privileged: true
+    volumes:
+      - /dev/ttyUSB0:/dev/ttyUSB0
+    environment:
+      - MESHTASTIC_PORT=/dev/ttyUSB0
+      - RNS_HOST=reticulum
+
+networks:
+  default:
+    name: evez-net

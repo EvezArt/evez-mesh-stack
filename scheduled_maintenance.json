@@ -1,0 +1,44 @@
+{
+  "name": "EVEZ Scheduled Maintenance",
+  "nodes": [
+    {
+      "parameters": {"rule": {"interval": [{"field": "hours", "hoursInterval": 6}]}},
+      "name": "Every 6 Hours",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://meshmind:8899/api/health",
+        "options": {}
+      },
+      "name": "Get Health",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://meshmind:8899/api/diagnose",
+        "method": "POST",
+        "options": {}
+      },
+      "name": "AI Diagnose",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "general",
+        "text": "🩺 EVEZ 6-Hour Health Report\n\n{{$json.diagnosis}}\n\n🌡️ CPU: {{$json.health.thermal.cpu_temp_c}}°C\n📊 Load: {{$json.health.resources.load_1}}\n🐳 Services: {{Object.keys($json.health.docker).length}} running"
+      },
+      "name": "Post to Slack",
+      "type": "n8n-nodes-base.slack",
+      "position": [910, 300]
+    }
+  ],
+  "connections": {
+    "Every 6 Hours": {"main": [[{"node": "Get Health","type":"main","index":0}]]},
+    "Get Health": {"main": [[{"node": "AI Diagnose","type":"main","index":0}]]},
+    "AI Diagnose": {"main": [[{"node": "Post to Slack","type":"main","index":0}]]}
+  }
+}

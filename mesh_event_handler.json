@@ -1,0 +1,46 @@
+{
+  "name": "EVEZ Mesh Event Handler",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "evez-mesh-event",
+        "responseMode": "responseNode"
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [{"value1": "{{$json.event_type}}", "operation": "equals", "value2": "thermal"}]
+        }
+      },
+      "name": "Is Thermal Event?",
+      "type": "n8n-nodes-base.if",
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "general",
+        "text": "🔥 THERMAL ALERT: {{$json.severity}} — {{$json.message}}\nAction: {{$json.action_taken}}\nCPU: {{$json.cpu_temp}}°C"
+      },
+      "name": "Slack Alert",
+      "type": "n8n-nodes-base.slack",
+      "position": [690, 200]
+    },
+    {
+      "parameters": {
+        "chatId": "general",
+        "text": "📡 MESH EVENT: {{$json.event_type}} [{{$json.severity}}]\n{{$json.message}}\nSource: {{$json.source}}"
+      },
+      "name": "General Alert",
+      "type": "n8n-nodes-base.slack",
+      "position": [690, 400]
+    }
+  ],
+  "connections": {
+    "Webhook": {"main": [[{"node": "Is Thermal Event?","type":"main","index":0}]]},
+    "Is Thermal Event?": {"main": [[{"node": "Slack Alert","type":"main","index":0}],[{"node": "General Alert","type":"main","index":0}]]}
+  }
+}
